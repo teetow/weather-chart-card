@@ -875,6 +875,7 @@ const ALT_SCHEMA = [
   { name: "dew_point", title: "Alternative dew pointsensor", selector: { entity: { domain: 'sensor' } } },
   { name: "wind_gust_speed", title: "Alternative wind gust speed sensor", selector: { entity: { domain: 'sensor' } } },
   { name: "visibility", title: "Alternative visibility sensor", selector: { entity: { domain: 'sensor' } } },
+  { name: "snow_depth", title: "Snow depth sensor", selector: { entity: { domain: 'sensor' } } },
 ];
 
 class WeatherChartCardEditor extends s {
@@ -1355,6 +1356,15 @@ class WeatherChartCardEditor extends s {
             Show Visibility
           </label>
         ` : ''}
+      </div>
+      <div class="switch-container">
+        <ha-switch
+          @change="${(e) => this._valueChanged(e, 'show_snow_depth')}"
+          .checked="${this._config.show_snow_depth !== false}"
+        ></ha-switch>
+        <label class="switch-label">
+          Show Snow Depth
+        </label>
       </div>
           <div class="switch-container">
             <ha-switch
@@ -18024,6 +18034,7 @@ static getStubConfig(hass, unusedEntities, allEntities) {
       pressure: {type: Object},
       windSpeed: {type: Object},
       windDirection: {type: Number},
+      snow_depth: {type: Object},
       forecastChart: {type: Object},
       forecastItems: {type: Number},
       forecasts: { type: Array }
@@ -18042,6 +18053,7 @@ setConfig(config) {
     show_dew_point: false,
     show_wind_gust_speed: false,
     show_visibility: false,
+    show_snow_depth: false,
     show_last_changed: false,
     show_description: false,
     ...config,
@@ -18088,6 +18100,7 @@ set hass(hass) {
   this.unitSpeed = this.config.units.speed ? this.config.units.speed : this.weather && this.weather.attributes.wind_speed_unit;
   this.unitPressure = this.config.units.pressure ? this.config.units.pressure : this.weather && this.weather.attributes.pressure_unit;
   this.unitVisibility = this.config.units.visibility ? this.config.units.visibility : this.weather && this.weather.attributes.visibility_unit;
+  this.unitSnowDepth = this.config.snow_depth && hass.states[this.config.snow_depth] ? hass.states[this.config.snow_depth].attributes.unit_of_measurement : null;
   this.weather = this.config.entity in hass.states
     ? hass.states[this.config.entity]
     : null;
@@ -18101,6 +18114,7 @@ set hass(hass) {
     this.dew_point = this.config.dew_point ? hass.states[this.config.dew_point].state : this.weather.attributes.dew_point;
     this.wind_gust_speed = this.config.wind_gust_speed ? hass.states[this.config.wind_gust_speed].state : this.weather.attributes.wind_gust_speed;
     this.visibility = this.config.visibility ? hass.states[this.config.visibility].state : this.weather.attributes.visibility;
+    this.snow_depth = this.config.snow_depth ? hass.states[this.config.snow_depth].state : this.weather.attributes.snow_depth;
 
     if (this.config.winddir && hass.states[this.config.winddir] && hass.states[this.config.winddir].state !== undefined) {
       this.windDirection = parseFloat(hass.states[this.config.winddir].state);
@@ -19028,10 +19042,12 @@ renderMain({ config, sun, weather, temperature, feels_like, description } = this
   `;
 }
 
-renderAttributes({ config, humidity, pressure, windSpeed, windDirection, sun, language, uv_index, dew_point, wind_gust_speed, visibility } = this) {
+renderAttributes({ config, humidity, pressure, windSpeed, windDirection, sun, language, uv_index, dew_point, wind_gust_speed, visibility, snow_depth } = this) {
   let dWindSpeed = windSpeed;
   let dWindGustSpeed = wind_gust_speed;
   let dPressure = pressure;
+  let dSnowDepth = snow_depth;
+  let snowDepthUnit = this._hass.config.unit_system.length === 'km' ? 'cm' : 'in';
 
   if (this.unitSpeed !== this.weather.attributes.wind_speed_unit) {
     if (this.unitSpeed === 'm/s') {
@@ -19112,6 +19128,33 @@ renderAttributes({ config, humidity, pressure, windSpeed, windDirection, sun, la
     }
   }
 
+  // Convert snow depth to cm or inches based on unit system
+  if (snow_depth !== undefined && this.unitSnowDepth) {
+    if (this._hass.config.unit_system.length === 'km') {
+      // Target is cm
+      if (this.unitSnowDepth === 'm') {
+        dSnowDepth = Math.round(snow_depth * 100);
+      } else if (this.unitSnowDepth === 'mm') {
+        dSnowDepth = Math.round(snow_depth / 10);
+      } else if (this.unitSnowDepth === 'in') {
+        dSnowDepth = Math.round(snow_depth * 2.54);
+      } else {
+        dSnowDepth = Math.round(snow_depth);
+      }
+    } else {
+      // Target is inches
+      if (this.unitSnowDepth === 'm') {
+        dSnowDepth = Math.round(snow_depth * 39.3701);
+      } else if (this.unitSnowDepth === 'cm') {
+        dSnowDepth = Math.round(snow_depth / 2.54);
+      } else if (this.unitSnowDepth === 'mm') {
+        dSnowDepth = Math.round(snow_depth / 25.4);
+      } else {
+        dSnowDepth = Math.round(snow_depth);
+      }
+    }
+  }
+
   if (config.show_attributes == false)
     return x``;
 
@@ -19123,10 +19166,11 @@ renderAttributes({ config, humidity, pressure, windSpeed, windDirection, sun, la
   const showDewpoint = config.show_dew_point == true;
   const showWindgustspeed = config.show_wind_gust_speed == true;
   const showVisibility = config.show_visibility == true;
+  const showSnowDepth = config.show_snow_depth == true;
 
 return x`
     <div class="attributes">
-      ${((showHumidity && humidity !== undefined) || (showPressure && dPressure !== undefined) || (showDewpoint && dew_point !== undefined) || (showVisibility && visibility !== undefined)) ? x`
+      ${((showHumidity && humidity !== undefined) || (showPressure && dPressure !== undefined) || (showDewpoint && dew_point !== undefined) || (showVisibility && visibility !== undefined) || (showSnowDepth && snow_depth !== undefined)) ? x`
         <div>
           ${showHumidity && humidity !== undefined ? x`
             <ha-icon icon="hass:water-percent"></ha-icon> ${humidity} %<br>
@@ -19138,7 +19182,10 @@ return x`
             <ha-icon icon="hass:thermometer-water"></ha-icon> ${dew_point} ${this.weather.attributes.temperature_unit} <br>
           ` : ''}
           ${showVisibility && visibility !== undefined ? x`
-            <ha-icon icon="hass:eye"></ha-icon> ${visibility} ${this.weather.attributes.visibility_unit}
+            <ha-icon icon="hass:eye"></ha-icon> ${visibility} ${this.weather.attributes.visibility_unit}<br>
+          ` : ''}
+          ${showSnowDepth && snow_depth !== undefined ? x`
+            <ha-icon icon="hass:snowflake"></ha-icon> ${dSnowDepth} ${snowDepthUnit}
           ` : ''}
         </div>
       ` : ''}

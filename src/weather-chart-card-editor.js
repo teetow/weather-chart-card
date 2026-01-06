@@ -12,6 +12,7 @@ const ALT_SCHEMA = [
   { name: "dew_point", title: "Alternative dew pointsensor", selector: { entity: { domain: 'sensor' } } },
   { name: "wind_gust_speed", title: "Alternative wind gust speed sensor", selector: { entity: { domain: 'sensor' } } },
   { name: "visibility", title: "Alternative visibility sensor", selector: { entity: { domain: 'sensor' } } },
+  { name: "snow_depth", title: "Snow depth sensor", selector: { entity: { domain: 'sensor' } } },
 ];
 
 class WeatherChartCardEditor extends LitElement {
@@ -492,6 +493,15 @@ class WeatherChartCardEditor extends LitElement {
             Show Visibility
           </label>
         ` : ''}
+      </div>
+      <div class="switch-container">
+        <ha-switch
+          @change="${(e) => this._valueChanged(e, 'show_snow_depth')}"
+          .checked="${this._config.show_snow_depth !== false}"
+        ></ha-switch>
+        <label class="switch-label">
+          Show Snow Depth
+        </label>
       </div>
           <div class="switch-container">
             <ha-switch

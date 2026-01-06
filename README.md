@@ -37,6 +37,7 @@ HACS is a third party community store and is not included in Home Assistant out 
 | dew_point             | string  | none                     | An entity_id for a custom dew point sensor.                                                        |
 | wind_gust_speed       | string  | none                     | An entity_id for a custom wind gust speed sensor.                                                  |
 | visibility            | string  | none                     | An entity_id for a custom visibility sensor.                                                       |
+| snow_depth            | string  | none                     | An entity_id for a snow depth sensor (converts to cm or inches based on unit system).              |
 | description           | string  | none                     | An entity_id for a custom weather description sensor.                                              |
 | title                 | string  | none                     | Card title.                                                                                        |
 | show_main             | boolean | true                     | Show or hide a section with current weather condition and temperature.                             |
@@ -56,6 +57,7 @@ HACS is a third party community store and is not included in Home Assistant out 
 | show_dew_point        | boolean | false                    | Show or hide dew point on the card.                                                                |
 | show_wind_gust_speed  | boolean | false                    | Show or hide wind gust speed on the card.                                                          |
 | show_visibility       | boolean | false                    | Show or hide visibility on the card.                                                               |
+| show_snow_depth       | boolean | false                    | Show or hide snow depth on the card.                                                               |
 | show_description      | boolean | false                    | Show or hide the weather description on the card.                                                  |
 | show_last_changed     | boolean | false                    | Show or hide when last data changed on the card.                                                   |
 | use_12hour_format     | boolean | false                    | Display time in 12-hour format (AM/PM) instead of 24-hour format.                                  |
@@ -145,6 +147,14 @@ entity: weather.my_home
 units:
   pressure: mmHg
   speed: m/s
+```
+
+###### Snow depth sensor
+```yaml
+type: custom:weather-chart-card
+entity: weather.my_home
+snow_depth: sensor.snow_depth
+show_snow_depth: true
 ```
 
 ###### Supported languages:
